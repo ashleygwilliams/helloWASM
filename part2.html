@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Wasm Workshop: Part 2</title>
+    <meta charset="utf-8">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css" rel="stylesheet"/>
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link href="styles/part2slides.css" rel="stylesheet"/>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+![wasm+rust](img/rustwebassembly.png)
+# From Rust to Webpack: .bold[WebAssembly Tooling]
+
+### Ashley Williams, @ag_dubs
+
+---
+class: left, top
+
+# .slide-header[Agenda]
+
+- Overview
+- A Brief Intro to Rust
+- Writing A RustWASM Crate
+- `wasm-bindgen`
+- `wasm-pack`
+- Hello WASM! website
+
+---
+class: left, top
+
+# .slide-header[Overview]
+
+# How does a piece of Rust code end up as code that can be consumed by the browser?
+.pipeline[![rustwasm pipeline](img/lin_pipeline.png)]
+
+.footnote[Lin Clark. https://hacks.mozilla.org/2018/03/making-webassembly-better-for-rust-for-all-languages/]
+
+---
+class: left, top
+
+# .slide-header[Overview]
+
+- Code is written in Rust
+- Rust is compiled to a WASM target
+- `wasm-bindgen` translates Rust function signatures to WASM
+- `wasm-pack` packages the compiled code for npm
+- `webpack` bundles the code for the browser
+
+---
+class: left, top
+
+# .slide-header[Overview]
+
+## WASM is not trying to replace JS
+
+![rust loves js](img/lin_rustjs.png)
+
+### Our goal is that WebAssembly work seamlessly with JS in workflows that developers already use
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+## **Rust** is a systems programming language that runs blazingly fast, prevents segfaults, and guarantees thread safety.
+.pipeline[![rustwasm pipeline](img/ferris.gif)]
+.footnote[https://www.rust-lang.org]
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+## **Rust** is ? ???????? ?????? ?????? ????? ???? ?????? ?????? ???? ????????? ?????? ??????????? ??????? ?????? ?????? ??????????
+.pipeline[![rustwasm pipeline](img/ferris.gif)]
+.footnote[https://www.rust-lang.org]
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+## **Rust** is a systems programming language designed to **empower developers of all kinds to write fast, safe code**.
+.pipeline[![rustwasm pipeline](img/ferris.gif)]
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+# Tools
+
+## - `rustup`: a version manager and toolchain installer
+## - `cargo`: a package manager, build tool, test runner, and documentation generator
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## Setting up a Project
+
+There are 2 types of projects: **library** and **binary**.
+
+`cargo new` will create a skeleton project setup for you.
+
+1. `cd` to a directory where you like to store code
+2. `cargo new hello-wasm --bin`
+3. `cd hello-wasm`
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## Files created
+
+- `Cargo.toml`: metadata about your project and its dependencies
+- `.gitignore`: ignores compiled files built by Rust
+- `src/main.rs`: where your Rust code goes
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## `Cargo.toml`
+
+This file contains metadata about your project as well as all the information about its dependencies.
+It's like a `package.json`.
+
+```toml
+[package]
+name = "hello-wasm"
+description = "a crate to learn about wasm"
+version = "0.1.0"
+authors = ["Ashley Williams <ashley666ashley@gmail.com>"]
+license = "WTFPL"
+repository = "https://github.com/ashleygwilliams/hello-wasm"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.1.0"
+```
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## `src/main.rs`
+
+```rust
+fn main() {
+    println!("Hello, Rust!");
+}
+```
+
+Every binary Rust application must have a `main` function.
+
+To run this, type:
+# `cargo run`
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## Types
+
+Rust is strongly, statically typed. Common fundamental types are:
+
+- `u32`: unsigned 32-bit integer
+- `i32`: signed 32-bit integer
+- `f64`: floating point number
+- `String` and/or `&str`: strings
+- `bool`: a boolean
+
+---
+class: left, top, string
+
+# .slide-header[A Brief Intro to Rust]
+
+## A Tale of Two Strings
+
+Strings are actually quite complicated! Dynamic languages hide this, but *sadly* Rust doesn't.
+In the beginning strings in Rust can feel difficult :(
+
+### `String`
+
+* Full featured with convenience methods
+* Can create with either:
+  * `something.to_string()` OR `String::from("string slice")`
+
+### `&str`
+
+* Pronounced "and stir" or "string slice"
+* Hardcoded strings are `&str`s
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## Variables
+
+```rust
+let name = "ashley";
+let age = 30;
+println!("Hi, {}! You are {} years old.", name, age);
+```
+
+## Mutability
+
+Variables are *immutable* by default in Rust.
+
+```rust
+let name = "ashley";
+let mut age = 30;
+age += 1;
+println!("Hi, {}! You are ACTUALLY {} years old.", name, age);
+```
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+## Functions
+
+```rust
+// In Rust:
+fn greet(name: &str) -> String {
+    format!("Hello {}!", name)
+}
+
+fn main() {
+    println!(greet("Rust"));
+}
+```
+
+```js
+// In JavaScript:
+function greet(name) {
+  return `Hello ${name}!`
+}
+console.log(greet("Rust"))
+```
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## Dependencies
+
+1. Add the dependency to your `Cargo.toml`.
+2. Add `extern crate mydep;` to your `main.rs` or `lib.rs`.
+3. Optionally, add `use::mydep` to bring the deps exports into namespace.
+
+---
+class: left, top
+
+# .slide-header[A Brief Intro to Rust]
+
+## API Documentation
+
+# https://doc.rust-lang.org/
+
+---
+class: left, top
+
+# .slide-header[Writing A RustWASM Crate]
+
+## Let's code together!
+
+### View the code for this exercise [here](https://github.com/steveklabnik/booster2018/tree/gh-pages/exercises/part2/hello-wasm/crate)
+
+---
+class: left, top
+
+# .slide-header[wasm-bindgen]
+
+### JavaScript has all sorts of objects!
+## But WASM only has Integers and Floating Point Numbers.
+
+---
+class: left, top
+
+# .slide-header[wasm-bindgen]
+
+Enable WASM to pass objects to JavaScript.
+
+## `cargo install wasm-bindgen`
+
+### [github repo](https://github.com/alexcrichton/wasm-bindgen)
+![wasm-bindgen](img/lin_wasmbindgen.png)
+
+.footnote[Lin Clark. https://hacks.mozilla.org/2018/03/making-webassembly-better-for-rust-for-all-languages/]
+
+---
+class: left, top
+
+# .slide-header[wasm-pack]
+
+Compile and package your WASM package for npm.
+
+## `cargo install wasm-pack`
+
+### [github repo](https://github.com/ashleygwilliams/wasm-pack)
+![wasm-pack](img/lin_wasmpack.png)
+
+.footnote[Lin Clark. https://hacks.mozilla.org/2018/03/making-webassembly-better-for-rust-for-all-languages/]
+
+---
+class: left, top
+
+# .slide-header[wasm-pack]
+
+# [wasm-pack tutorial](https://github.com/mgattozzi/rust-wasm/tree/10f54d8023b2c8d2ea0d680c753cd26de5baee6d/src/wasm-pack)
+
+### Comment on the PR [here](https://github.com/rust-lang-nursery/rust-wasm/pull/86)!
+
+---
+class: left, top
+
+# .slide-header[Hello WASM! website]
+
+## Bundlers are prepared to consume WASM already!
+### Thanks to ESModules!
+
+.bundle[![bundle](img/lin_bundle.png)]
+
+.footnote[Lin Clark. https://hacks.mozilla.org/2018/03/making-webassembly-better-for-rust-for-all-languages/]
+
+---
+class: left, top
+
+# .slide-header[Hello WASM! website]
+
+## Let's code together!
+
+### View the code for this exercise [here](https://github.com/steveklabnik/booster2018/tree/gh-pages/exercises/part2/hello-wasm/website)
+
+
+.footnote[Lin Clark. https://hacks.mozilla.org/2018/03/making-webassembly-better-for-rust-for-all-languages/]
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
