@@ -1,4 +1,13 @@
-const js = import("./node_modules/@ag_dubs/hello_wasm/hello_wasm.js");
+const js = import("./node_modules/hello-wasm-bcnrust/hello_wasm.js");
 js.then(js => {
-  js.greet("wasm");
+  const callWasm = function() {
+    let name = window.prompt("Hello! What is your name?", "wasm");
+    js.greet(name);
+  }
+
+  const button = document.getElementById("clickme");
+  button.onclick = callWasm;
+
+  callWasm();
 });
+

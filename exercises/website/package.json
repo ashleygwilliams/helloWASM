@@ -4,16 +4,14 @@
   "description": "a website that uses a wasm pkg",
   "main": "index.js",
   "scripts": {
-     "serve": "webpack-dev-server"
+    "start": "webpack-dev-server"
   },
   "author": "Ashely Williams",
   "license": "WTFPL",
   "dependencies": {
-    "@ag_dubs/hello-wasm": "^0.1.0"
+    "hello-wasm-bcnrust": "^0.1.0"
   },
   "devDependencies": {
-    "webpack": "^4.0.1",
-    "webpack-cli": "^2.0.10",
     "webpack-dev-server": "^3.1.0"
   }
 }
